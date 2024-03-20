@@ -2,9 +2,7 @@
 
 import fs from 'fs';
 import inquirer from 'inquirer';
-import path from 'path';
-
-import { dirname } from 'path';
+import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -33,18 +31,19 @@ function createProjectStructure(projectName: string) {
     fs.mkdirSync(projectPath, { recursive: true });
   }
 
-  // Caminho para o diretório de templates
   const templatesDir = path.join(__dirname, '..', 'templates');
   const filesToCopy = fs.readdirSync(templatesDir);
 
   filesToCopy.forEach((file) => {
-    const content = fs
-      .readFileSync(path.join(templatesDir, file), 'utf8')
-      .replace('{{projectName}}', projectName); // Substitui placeholder pelo nome do projeto
+    let content = fs.readFileSync(path.join(templatesDir, file), 'utf8');
+
+    // Aqui é onde o placeholder é substituído pelo nome do projeto.
+    // Isso é especialmente útil para o package.json, mas aplicado a todos os arquivos por consistência.
+    content = content.replace(/{{projectName}}/g, projectName);
+
     fs.writeFileSync(path.join(projectPath, file), content);
   });
 
-  // Cria src/index.ts com conteúdo básico
   const srcPath = path.join(projectPath, 'src');
   if (!fs.existsSync(srcPath)) {
     fs.mkdirSync(srcPath, { recursive: true });
@@ -59,8 +58,8 @@ async function init() {
   const projectName = await getProjectDetails();
   createProjectStructure(projectName);
   console.log(`Projeto ${projectName} configurado com sucesso!`);
-  console.log(` cd ${projectName}`);
-  console.log(` npm install`);
+  console.log(`cd ${projectName}`);
+  console.log(`npm install`);
 }
 
 init();
