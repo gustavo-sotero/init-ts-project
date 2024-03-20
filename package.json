@@ -1,6 +1,6 @@
 {
   "name": "init-ts-project",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "Inicia um projeto TypeScript.",
   "main": "out/index.js",
@@ -11,6 +11,11 @@
   },
   "bin": {
     "init-ts-project": "out/index.js"
+  },
+  "homepage": "https://github.com/gustavo-sotero/init-ts-project",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gustavo-sotero/init-ts-project.git"
   },
   "author": "Gustavo Sotero",
   "license": "MIT",
