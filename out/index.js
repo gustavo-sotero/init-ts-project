@@ -43,5 +43,7 @@ async function init() {
     const projectName = await getProjectDetails();
     createProjectStructure(projectName);
     console.log(`Projeto ${projectName} configurado com sucesso!`);
+    console.log(` cd ${projectName}`);
+    console.log(` npm install`);
 }
 init();
