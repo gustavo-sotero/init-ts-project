@@ -36,12 +36,15 @@ function executeCommand(
   return new Promise((resolve, reject) => {
     const options = {
       cwd: directory,
+      stdio: print
+        ? (['inherit', 'inherit', 'inherit'] as [
+            'inherit',
+            'inherit',
+            'inherit'
+          ])
+        : (['ignore', 'ignore', 'ignore'] as ['ignore', 'ignore', 'ignore']),
       shell: true
     };
-
-    if (print) {
-      options['stdio'] = 'inherit';
-    }
 
     const child = spawn(command, args, options);
 
@@ -70,7 +73,7 @@ async function createProjectStructure(projectName: string) {
     await executeCommand('npm init -y', projectPath, false);
 
     await executeCommand(
-      'npm install typescript @commitlint/cli @commitlint/config-conventional @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-prettier husky prettier tsx typescript jest ts-jest @jest/globals eslint-plugin-jest @types/jest',
+      'npm install typescript @commitlint/cli @commitlint/config-conventional @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-prettier husky prettier tsx typescript jest ts-jest @jest/globals eslint-plugin-jest @types/jest @types/node',
       projectPath
     );
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import fs from 'fs';
 import inquirer from 'inquirer';
 import path, { dirname } from 'path';
@@ -20,23 +20,26 @@ async function getProjectDetails() {
             .then((answers) => answers.projectName));
     return projectName;
 }
-function executeCommand(command, directory, print = true) {
+function executeCommand(command, directory, print = true, args = []) {
     return new Promise((resolve, reject) => {
         const options = {
-            cwd: directory
+            cwd: directory,
+            stdio: print
+                ? ['inherit', 'inherit', 'inherit']
+                : ['ignore', 'ignore', 'ignore'],
+            shell: true
         };
-        exec(command, options, (error, stdout, stderr) => {
-            if (error) {
-                reject(`exec error: ${error}`);
-                return;
+        const child = spawn(command, args, options);
+        child.on('error', (error) => {
+            console.error(`exec error: ${error}`);
+            reject(error);
+        });
+        child.on('close', (code) => {
+            if (code === 0) {
+                resolve();
             }
-            if (stderr) {
-                reject(`stderr: ${stderr}`);
-                return;
-            }
-            if (print) {
-                console.log(stdout);
-                resolve(stdout);
+            else {
+                reject(new Error(`Command failed with exit code ${code}`));
             }
         });
     });
@@ -48,22 +51,30 @@ async function createProjectStructure(projectName) {
             fs.mkdirSync(projectPath, { recursive: true });
         }
         await executeCommand('npm init -y', projectPath, false);
-        await executeCommand('npm install typescript @commitlint/cli @commitlint/config-conventional @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-prettier husky prettier tsx typescript', projectPath);
+        await executeCommand('npm install typescript @commitlint/cli @commitlint/config-conventional @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-prettier husky prettier tsx typescript jest ts-jest @jest/globals eslint-plugin-jest @types/jest @types/node', projectPath);
         await executeCommand('npm install commitizen -g', projectPath);
         await executeCommand('commitizen init cz-conventional-changelog --save-dev --save-exact', projectPath);
         await executeCommand('npx husky init', projectPath);
         const templatesDir = path.join(__dirname, '..', 'templates');
+        const templatesHuskyDir = path.join(__dirname, '..', 'husky-templates');
         const filesToCopy = fs.readdirSync(templatesDir);
+        const filesHuskyToCopy = fs.readdirSync(templatesHuskyDir);
         filesToCopy.forEach((file) => {
             let content = fs.readFileSync(path.join(templatesDir, file), 'utf8');
             content = content.replace(/{{projectName}}/g, projectName);
             fs.writeFileSync(path.join(projectPath, file), content);
+        });
+        filesHuskyToCopy.forEach((file) => {
+            let content = fs.readFileSync(path.join(templatesHuskyDir, file), 'utf8');
+            content = content.replace(/{{projectName}}/g, projectName);
+            fs.writeFileSync(path.join(projectPath, '.husky', file), content);
         });
         const scriptsFile = fs.readFileSync(path.join(projectPath, 'package.json'), {
             encoding: 'utf8'
         });
         const jsonScriptsFile = JSON.parse(scriptsFile);
         jsonScriptsFile.scripts['dev'] = 'tsx --watch ./src/index.ts';
+        jsonScriptsFile.scripts['test'] = 'jest';
         jsonScriptsFile.scripts['build'] = 'tsc';
         jsonScriptsFile.scripts['start'] = 'node ./out/index.js';
         fs.writeFileSync(path.join(projectPath, 'package.json'), JSON.stringify(jsonScriptsFile, null, 2));
@@ -80,7 +91,7 @@ async function createProjectStructure(projectName) {
 async function init() {
     const projectName = await getProjectDetails();
     await createProjectStructure(projectName);
-    console.log(`Projeto ${projectName} configurado com sucesso!`);
+    console.log(`\nProjeto ${projectName} configurado com sucesso!`);
     console.log(`cd ${projectName}`);
     console.log(`code .`);
 }
