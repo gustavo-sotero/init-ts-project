@@ -85,7 +85,6 @@ async function createProjectStructure(projectName: string) {
     );
 
     await executeCommand('npx husky init', projectPath);
-    await executeCommand('git init', projectPath);
 
     const templatesDir = path.join(__dirname, '..', 'templates');
     const templatesHuskyDir = path.join(__dirname, '..', 'husky-templates');
@@ -93,6 +92,7 @@ async function createProjectStructure(projectName: string) {
     const filesHuskyToCopy = fs.readdirSync(templatesHuskyDir);
 
     filesToCopy.forEach((file) => {
+      console.log(file);
       let content = fs.readFileSync(path.join(templatesDir, file), 'utf8');
 
       // Aqui é onde o placeholder é substituído pelo nome do projeto.
@@ -111,6 +111,7 @@ async function createProjectStructure(projectName: string) {
 
       fs.writeFileSync(path.join(projectPath, '.husky', file), content);
     });
+    await executeCommand('git init', projectPath);
 
     const scriptsFile = fs.readFileSync(
       path.join(projectPath, 'package.json'),
