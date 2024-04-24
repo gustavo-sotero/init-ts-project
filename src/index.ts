@@ -97,11 +97,8 @@ async function createProjectStructure(projectName: string) {
       fs.copyFileSync(srcFile, destFile);
     });
 
-    if (fs.existsSync(path.join(projectPath, '.gitignore'))) {
-      fs.writeFileSync(
-        path.join(projectPath, '.gitignore'),
-        'node_modules/\nout/'
-      );
+    if (fs.existsSync(path.join('./', '.gitignore'))) {
+      fs.writeFileSync(path.join('./', '.gitignore'), 'node_modules/\nout/');
     }
 
     filesHuskyToCopy.forEach((file) => {
