@@ -11,7 +11,7 @@
     "prepare": "husky"
   },
   "files": [
-    "templates/*",
+    "*",
     "templates/.gitignore"
   ],
   "bin": {
