@@ -73,7 +73,7 @@ async function createProjectStructure(projectName: string) {
     await executeCommand('npm init -y', projectPath, false);
 
     await executeCommand(
-      'npm install typescript @commitlint/cli @commitlint/config-conventional @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-prettier husky prettier tsx typescript jest ts-jest @jest/globals eslint-plugin-jest @types/jest @types/node',
+      'npm install typescript @commitlint/cli @commitlint/config-conventional @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-prettier husky prettier tsx typescript jest ts-jest @jest/globals eslint-plugin-jest @types/jest @types/node -D',
       projectPath
     );
 
