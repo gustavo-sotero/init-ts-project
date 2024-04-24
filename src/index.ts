@@ -92,25 +92,17 @@ async function createProjectStructure(projectName: string) {
     const filesHuskyToCopy = fs.readdirSync(templatesHuskyDir);
 
     filesToCopy.forEach((file) => {
-      console.log(file);
-      let content = fs.readFileSync(path.join(templatesDir, file), 'utf8');
-
-      // Aqui é onde o placeholder é substituído pelo nome do projeto.
-      // Isso é especialmente útil para o package.json, mas aplicado a todos os arquivos por consistência.
-      content = content.replace(/{{projectName}}/g, projectName);
-
-      fs.writeFileSync(path.join(projectPath, file), content);
+      const srcFile = path.join(templatesDir, file);
+      const destFile = path.join(projectPath, file);
+      fs.copyFileSync(srcFile, destFile);
     });
 
     filesHuskyToCopy.forEach((file) => {
-      let content = fs.readFileSync(path.join(templatesHuskyDir, file), 'utf8');
-
-      // Aqui é onde o placeholder é substituído pelo nome do projeto.
-      // Isso é especialmente útil para o package.json, mas aplicado a todos os arquivos por consistência.
-      content = content.replace(/{{projectName}}/g, projectName);
-
-      fs.writeFileSync(path.join(projectPath, '.husky', file), content);
+      const srcFile = path.join(templatesHuskyDir, file);
+      const destFile = path.join(projectPath, '.husky', file);
+      fs.copyFileSync(srcFile, destFile);
     });
+
     await executeCommand('git init', projectPath);
 
     const scriptsFile = fs.readFileSync(
