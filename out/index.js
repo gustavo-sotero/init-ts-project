@@ -55,6 +55,7 @@ async function createProjectStructure(projectName) {
         await executeCommand('npm install commitizen -g', projectPath);
         await executeCommand('commitizen init cz-conventional-changelog --save-dev --save-exact', projectPath);
         await executeCommand('npx husky init', projectPath);
+        await executeCommand('git init', projectPath);
         const templatesDir = path.join(__dirname, '..', 'templates');
         const templatesHuskyDir = path.join(__dirname, '..', 'husky-templates');
         const filesToCopy = fs.readdirSync(templatesDir);
