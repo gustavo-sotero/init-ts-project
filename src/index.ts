@@ -97,13 +97,6 @@ async function createProjectStructure(projectName: string) {
       fs.copyFileSync(srcFile, destFile);
     });
 
-    if (fs.existsSync(path.join(projectPath, '.gitignore'))) {
-      fs.writeFileSync(
-        path.join(projectPath, '.gitignore'),
-        'node_modules/\nout/'
-      );
-    }
-
     filesHuskyToCopy.forEach((file) => {
       const srcFile = path.join(templatesHuskyDir, file);
       const destFile = path.join(projectPath, '.husky', file);
@@ -138,13 +131,6 @@ async function createProjectStructure(projectName: string) {
       path.join(srcPath, 'index.ts'),
       "console.log('Hello, TypeScript!');\n"
     );
-
-    if (fs.existsSync(path.join(projectPath, '.gitignore'))) {
-      fs.writeFileSync(
-        path.join(projectPath, '.gitignore'),
-        'node_modules/\nout/'
-      );
-    }
 
     fs.writeFileSync(
       path.join(projectPath, '.gitignore'),
