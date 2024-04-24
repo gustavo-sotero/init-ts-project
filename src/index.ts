@@ -85,6 +85,7 @@ async function createProjectStructure(projectName: string) {
     );
 
     await executeCommand('npx husky init', projectPath);
+    await executeCommand('git init', projectPath);
 
     const templatesDir = path.join(__dirname, '..', 'templates');
     const templatesHuskyDir = path.join(__dirname, '..', 'husky-templates');
