@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { spawn } from 'child_process';
+
 import fs from 'fs';
 import inquirer from 'inquirer';
 import path, { dirname } from 'path';
@@ -25,41 +27,124 @@ async function getProjectDetails() {
   return projectName;
 }
 
-function createProjectStructure(projectName: string) {
-  const projectPath = path.join(process.cwd(), projectName);
-  if (!fs.existsSync(projectPath)) {
-    fs.mkdirSync(projectPath, { recursive: true });
-  }
+function executeCommand(
+  command: string,
+  directory?: string,
+  print: boolean = true,
+  args: string[] = []
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const options = {
+      cwd: directory,
+      shell: true
+    };
 
-  const templatesDir = path.join(__dirname, '..', 'templates');
-  const filesToCopy = fs.readdirSync(templatesDir);
+    if (print) {
+      options['stdio'] = 'inherit';
+    }
 
-  filesToCopy.forEach((file) => {
-    let content = fs.readFileSync(path.join(templatesDir, file), 'utf8');
+    const child = spawn(command, args, options);
 
-    // Aqui é onde o placeholder é substituído pelo nome do projeto.
-    // Isso é especialmente útil para o package.json, mas aplicado a todos os arquivos por consistência.
-    content = content.replace(/{{projectName}}/g, projectName);
+    child.on('error', (error) => {
+      console.error(`exec error: ${error}`);
+      reject(error);
+    });
 
-    fs.writeFileSync(path.join(projectPath, file), content);
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Command failed with exit code ${code}`));
+      }
+    });
   });
+}
 
-  const srcPath = path.join(projectPath, 'src');
-  if (!fs.existsSync(srcPath)) {
-    fs.mkdirSync(srcPath, { recursive: true });
+async function createProjectStructure(projectName: string) {
+  try {
+    const projectPath = path.join(process.cwd(), projectName);
+    if (!fs.existsSync(projectPath)) {
+      fs.mkdirSync(projectPath, { recursive: true });
+    }
+
+    await executeCommand('npm init -y', projectPath, false);
+
+    await executeCommand(
+      'npm install typescript @commitlint/cli @commitlint/config-conventional @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-prettier husky prettier tsx typescript jest ts-jest @jest/globals eslint-plugin-jest @types/jest',
+      projectPath
+    );
+
+    await executeCommand('npm install commitizen -g', projectPath);
+
+    await executeCommand(
+      'commitizen init cz-conventional-changelog --save-dev --save-exact',
+      projectPath
+    );
+
+    await executeCommand('npx husky init', projectPath);
+
+    const templatesDir = path.join(__dirname, '..', 'templates');
+    const templatesHuskyDir = path.join(__dirname, '..', 'husky-templates');
+    const filesToCopy = fs.readdirSync(templatesDir);
+    const filesHuskyToCopy = fs.readdirSync(templatesHuskyDir);
+
+    filesToCopy.forEach((file) => {
+      let content = fs.readFileSync(path.join(templatesDir, file), 'utf8');
+
+      // Aqui é onde o placeholder é substituído pelo nome do projeto.
+      // Isso é especialmente útil para o package.json, mas aplicado a todos os arquivos por consistência.
+      content = content.replace(/{{projectName}}/g, projectName);
+
+      fs.writeFileSync(path.join(projectPath, file), content);
+    });
+
+    filesHuskyToCopy.forEach((file) => {
+      let content = fs.readFileSync(path.join(templatesHuskyDir, file), 'utf8');
+
+      // Aqui é onde o placeholder é substituído pelo nome do projeto.
+      // Isso é especialmente útil para o package.json, mas aplicado a todos os arquivos por consistência.
+      content = content.replace(/{{projectName}}/g, projectName);
+
+      fs.writeFileSync(path.join(projectPath, '.husky', file), content);
+    });
+
+    const scriptsFile = fs.readFileSync(
+      path.join(projectPath, 'package.json'),
+      {
+        encoding: 'utf8'
+      }
+    );
+
+    const jsonScriptsFile = JSON.parse(scriptsFile);
+    jsonScriptsFile.scripts['dev'] = 'tsx --watch ./src/index.ts';
+    jsonScriptsFile.scripts['test'] = 'jest';
+    jsonScriptsFile.scripts['build'] = 'tsc';
+    jsonScriptsFile.scripts['start'] = 'node ./out/index.js';
+
+    fs.writeFileSync(
+      path.join(projectPath, 'package.json'),
+      JSON.stringify(jsonScriptsFile, null, 2)
+    );
+
+    const srcPath = path.join(projectPath, 'src');
+    if (!fs.existsSync(srcPath)) {
+      fs.mkdirSync(srcPath, { recursive: true });
+    }
+    fs.writeFileSync(
+      path.join(srcPath, 'index.ts'),
+      "console.log('Hello, TypeScript!');\n"
+    );
+  } catch (error) {
+    console.error('Error executing command:', error);
   }
-  fs.writeFileSync(
-    path.join(srcPath, 'index.ts'),
-    "console.log('Hello, TypeScript!');\n"
-  );
 }
 
 async function init() {
   const projectName = await getProjectDetails();
-  createProjectStructure(projectName);
-  console.log(`Projeto ${projectName} configurado com sucesso!`);
+  await createProjectStructure(projectName);
+  console.log(`\nProjeto ${projectName} configurado com sucesso!`);
   console.log(`cd ${projectName}`);
-  console.log(`npm install`);
+  console.log(`code .`);
 }
 
 init();

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { exec } from 'child_process';
 import fs from 'fs';
 import inquirer from 'inquirer';
 import path, { dirname } from 'path';
@@ -19,29 +20,68 @@ async function getProjectDetails() {
             .then((answers) => answers.projectName));
     return projectName;
 }
-function createProjectStructure(projectName) {
-    const projectPath = path.join(process.cwd(), projectName);
-    if (!fs.existsSync(projectPath)) {
-        fs.mkdirSync(projectPath, { recursive: true });
-    }
-    const templatesDir = path.join(__dirname, '..', 'templates');
-    const filesToCopy = fs.readdirSync(templatesDir);
-    filesToCopy.forEach((file) => {
-        let content = fs.readFileSync(path.join(templatesDir, file), 'utf8');
-        content = content.replace(/{{projectName}}/g, projectName);
-        fs.writeFileSync(path.join(projectPath, file), content);
+function executeCommand(command, directory, print = true) {
+    return new Promise((resolve, reject) => {
+        const options = {
+            cwd: directory
+        };
+        exec(command, options, (error, stdout, stderr) => {
+            if (error) {
+                reject(`exec error: ${error}`);
+                return;
+            }
+            if (stderr) {
+                reject(`stderr: ${stderr}`);
+                return;
+            }
+            if (print) {
+                console.log(stdout);
+                resolve(stdout);
+            }
+        });
     });
-    const srcPath = path.join(projectPath, 'src');
-    if (!fs.existsSync(srcPath)) {
-        fs.mkdirSync(srcPath, { recursive: true });
+}
+async function createProjectStructure(projectName) {
+    try {
+        const projectPath = path.join(process.cwd(), projectName);
+        if (!fs.existsSync(projectPath)) {
+            fs.mkdirSync(projectPath, { recursive: true });
+        }
+        await executeCommand('npm init -y', projectPath, false);
+        await executeCommand('npm install typescript @commitlint/cli @commitlint/config-conventional @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-prettier husky prettier tsx typescript', projectPath);
+        await executeCommand('npm install commitizen -g', projectPath);
+        await executeCommand('commitizen init cz-conventional-changelog --save-dev --save-exact', projectPath);
+        await executeCommand('npx husky init', projectPath);
+        const templatesDir = path.join(__dirname, '..', 'templates');
+        const filesToCopy = fs.readdirSync(templatesDir);
+        filesToCopy.forEach((file) => {
+            let content = fs.readFileSync(path.join(templatesDir, file), 'utf8');
+            content = content.replace(/{{projectName}}/g, projectName);
+            fs.writeFileSync(path.join(projectPath, file), content);
+        });
+        const scriptsFile = fs.readFileSync(path.join(projectPath, 'package.json'), {
+            encoding: 'utf8'
+        });
+        const jsonScriptsFile = JSON.parse(scriptsFile);
+        jsonScriptsFile.scripts['dev'] = 'tsx --watch ./src/index.ts';
+        jsonScriptsFile.scripts['build'] = 'tsc';
+        jsonScriptsFile.scripts['start'] = 'node ./out/index.js';
+        fs.writeFileSync(path.join(projectPath, 'package.json'), JSON.stringify(jsonScriptsFile, null, 2));
+        const srcPath = path.join(projectPath, 'src');
+        if (!fs.existsSync(srcPath)) {
+            fs.mkdirSync(srcPath, { recursive: true });
+        }
+        fs.writeFileSync(path.join(srcPath, 'index.ts'), "console.log('Hello, TypeScript!');\n");
     }
-    fs.writeFileSync(path.join(srcPath, 'index.ts'), "console.log('Hello, TypeScript!');\n");
+    catch (error) {
+        console.error('Error executing command:', error);
+    }
 }
 async function init() {
     const projectName = await getProjectDetails();
-    createProjectStructure(projectName);
+    await createProjectStructure(projectName);
     console.log(`Projeto ${projectName} configurado com sucesso!`);
     console.log(`cd ${projectName}`);
-    console.log(`npm install`);
+    console.log(`code .`);
 }
 init();
