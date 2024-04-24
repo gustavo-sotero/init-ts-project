@@ -1,6 +1,6 @@
 {
   "name": "init-ts-project",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "type": "module",
   "description": "Inicia um projeto TypeScript.",
   "main": "out/index.js",
