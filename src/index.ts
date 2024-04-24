@@ -113,6 +113,7 @@ async function createProjectStructure(projectName: string) {
     );
 
     const jsonScriptsFile = JSON.parse(scriptsFile);
+    jsonScriptsFile['type'] = 'module';
     jsonScriptsFile.scripts['dev'] = 'tsx --watch ./src/index.ts';
     jsonScriptsFile.scripts['test'] = 'jest';
     jsonScriptsFile.scripts['build'] = 'tsc';
